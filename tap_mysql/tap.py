@@ -1,4 +1,5 @@
 """mysql tap class."""
+
 from __future__ import annotations
 
 import atexit
@@ -40,60 +41,43 @@ class TapMySQL(SQLTap):
             and self.config.get("port") is not None
             and self.config.get("user") is not None
             and self.config.get("password") is not None
-        ), (
-            "Need either the sqlalchemy_url to be set or host, port, user,"
-            " and password to be set"
-        )
+        ), ("Need either the sqlalchemy_url to be set or host, port, user," " and password to be set")
 
     config_jsonschema = th.PropertiesList(
         th.Property(
             "host",
             th.StringType,
-            description=(
-                "Hostname for mysql instance. "
-                "Note if sqlalchemy_url is set this will be ignored."
-            ),
+            description=("Hostname for mysql instance. " "Note if sqlalchemy_url is set this will be ignored."),
         ),
         th.Property(
             "port",
             th.IntegerType,
             default=3306,
             description=(
-                "The port on which mysql is awaiting connection. "
-                "Note if sqlalchemy_url is set this will be ignored."
+                "The port on which mysql is awaiting connection. " "Note if sqlalchemy_url is set this will be ignored."
             ),
         ),
         th.Property(
             "user",
             th.StringType,
-            description=(
-                "User name used to authenticate. "
-                "Note if sqlalchemy_url is set this will be ignored."
-            ),
+            description=("User name used to authenticate. " "Note if sqlalchemy_url is set this will be ignored."),
         ),
         th.Property(
             "password",
             th.StringType,
             secret=True,
-            description=(
-                "Password used to authenticate. "
-                "Note if sqlalchemy_url is set this will be ignored."
-            ),
+            description=("Password used to authenticate. " "Note if sqlalchemy_url is set this will be ignored."),
         ),
         th.Property(
             "database",
             th.StringType,
-            description=(
-                "Database name. Note if sqlalchemy_url is set this will be ignored."
-            ),
+            description=("Database name. Note if sqlalchemy_url is set this will be ignored."),
         ),
         th.Property(
             "sqlalchemy_url",
             th.StringType,
             secret=True,
-            description=(
-                "Example mysql://[username]:[password]@localhost:3306/[db_name]"
-            ),
+            description=("Example mysql://[username]:[password]@localhost:3306/[db_name]"),
         ),
         th.Property(
             "filter_schemas",
@@ -110,7 +94,7 @@ class TapMySQL(SQLTap):
                 th.Property(
                     "enable",
                     th.BooleanType,
-                    required=True,
+                    required=False,
                     default=False,
                     description=(
                         "Enable an ssh tunnel (also known as bastion host), see the "
@@ -120,29 +104,26 @@ class TapMySQL(SQLTap):
                 th.Property(
                     "host",
                     th.StringType,
-                    required=True,
-                    description=(
-                        "Host of the bastion host, this is the host "
-                        "we'll connect to via ssh"
-                    ),
+                    required=False,
+                    description=("Host of the bastion host, this is the host " "we'll connect to via ssh"),
                 ),
                 th.Property(
                     "username",
                     th.StringType,
-                    required=True,
+                    required=False,
                     description="Username to connect to bastion host",
                 ),
                 th.Property(
                     "port",
                     th.IntegerType,
-                    required=True,
+                    required=False,
                     default=22,
                     description="Port to connect to bastion host",
                 ),
                 th.Property(
                     "private_key",
                     th.StringType,
-                    required=True,
+                    required=False,
                     secret=True,
                     description="Private Key for authentication to the bastion host",
                 ),
@@ -152,9 +133,7 @@ class TapMySQL(SQLTap):
                     required=False,
                     secret=True,
                     default=None,
-                    description=(
-                        "Private Key Password, leave None if no password is set"
-                    ),
+                    description=("Private Key Password, leave None if no password is set"),
                 ),
             ),
             required=False,
@@ -302,6 +281,5 @@ class TapMySQL(SQLTap):
             List of discovered Stream objects.
         """
         return [
-            MySQLStream(self, catalog_entry, connector=self.connector)
-            for catalog_entry in self.catalog_dict["streams"]
+            MySQLStream(self, catalog_entry, connector=self.connector) for catalog_entry in self.catalog_dict["streams"]
         ]

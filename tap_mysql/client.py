@@ -1,4 +1,5 @@
 """SQL client handling."""
+
 from __future__ import annotations
 
 import datetime
@@ -14,9 +15,7 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
     from sqlalchemy.engine.reflection import Inspector
 
-unpatched_conform = (
-    singer_sdk.helpers._typing._conform_primitive_property  # noqa: SLF001
-)
+unpatched_conform = singer_sdk.helpers._typing._conform_primitive_property  # noqa: SLF001
 
 
 def patched_conform(
@@ -41,12 +40,43 @@ singer_sdk.helpers._typing._conform_primitive_property = patched_conform  # noqa
 class MySQLConnector(SQLConnector):
     """Connects to the MySQL SQL source."""
 
+    def create_engine(self) -> Engine:
+        """Creates and returns a new engine. Do not call outside of _engine.
+
+        NOTE: Do not call this method. The only place that this method should
+        be called is inside the self._engine method. If you'd like to access
+        the engine on a connector, use self._engine.
+
+        This method exists solely so that tap/target developers can override it
+        on their subclass of SQLConnector to perform custom engine creation
+        logic.
+
+        Returns:
+            A new SQLAlchemy Engine.
+        """
+        try:
+            return sqlalchemy.create_engine(
+                self.sqlalchemy_url,
+                echo=False,
+                json_serializer=self.serialize_json,
+                json_deserializer=self.deserialize_json,
+                pool_recycle=1800,
+                pool_pre_ping=True,
+            )
+        except TypeError:
+            self.logger.exception(
+                "Retrying engine creation with fewer arguments due to TypeError.",
+            )
+            return sqlalchemy.create_engine(
+                self.sqlalchemy_url,
+                echo=False,
+                pool_recycle=1800,
+                pool_pre_ping=True,
+            )
+
     @staticmethod
     def to_jsonschema_type(
-        sql_type: str  # noqa: ANN401
-        | sqlalchemy.types.TypeEngine
-        | type[sqlalchemy.types.TypeEngine]
-        | Any,
+        sql_type: str | sqlalchemy.types.TypeEngine | type[sqlalchemy.types.TypeEngine] | Any,  # noqa: ANN401
     ) -> dict:
         """Return a JSON Schema representation of the provided type.
 
@@ -84,17 +114,8 @@ class MySQLConnector(SQLConnector):
 
     @staticmethod
     def sdk_typing_object(
-        from_type: str
-        | sqlalchemy.types.TypeEngine
-        | type[sqlalchemy.types.TypeEngine],
-    ) -> (
-        th.DateTimeType
-        | th.NumberType
-        | th.IntegerType
-        | th.DateType
-        | th.StringType
-        | th.BooleanType
-    ):
+        from_type: str | sqlalchemy.types.TypeEngine | type[sqlalchemy.types.TypeEngine],
+    ) -> th.DateTimeType | th.NumberType | th.IntegerType | th.DateType | th.StringType | th.BooleanType:
         """Return the JSON Schema dict that describes the sql type.
 
         Args:
@@ -110,12 +131,7 @@ class MySQLConnector(SQLConnector):
         """
         sqltype_lookup: dict[
             str,
-            th.DateTimeType
-            | th.NumberType
-            | th.IntegerType
-            | th.DateType
-            | th.StringType
-            | th.BooleanType,
+            th.DateTimeType | th.NumberType | th.IntegerType | th.DateType | th.StringType | th.BooleanType,
         ] = {
             # NOTE: This is an ordered mapping, with earlier mappings taking
             # precedence. If the SQL-provided type contains the type name on
